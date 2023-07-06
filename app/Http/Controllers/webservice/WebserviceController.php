@@ -11,7 +11,7 @@ class WebserviceController extends Controller
     public function cep(Request $request) {
         $cep = str_replace("-", "", $request->cep);
 //        ixudra/curl
-        $response= Curl::to('viacep.com.br/ws/'.$cep.'/json')->get();
+        $response = Curl::to('viacep.com.br/ws/'.$cep.'/json')->get();
         $response = json_decode($response);
 
         if ($response) {

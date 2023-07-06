@@ -47,7 +47,7 @@ class VehiclesController extends Controller
             'features' => Vehicle_features::all(),
             'carcolor' => Vehicle_carcolor::all(),
             'exchange' => Vehicle_exchange::all(),
-            'finacial' => Vehicle_financial::all(),
+            'financial' => Vehicle_financial::all(),
             'cubiccms' => Vehicle_cubiccms::all()
         ];
     }
@@ -72,7 +72,6 @@ class VehiclesController extends Controller
     {
         //
     }
-
 
     public function update(Request $request, $id)
     {

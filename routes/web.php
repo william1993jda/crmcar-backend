@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
+use \App\Http\Controllers\ImageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,5 +14,7 @@ use Illuminate\Support\Facades\Route;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
+Route::get('/thumb/{path}/{img}', [ImageController::class, 'thumb']);
 
 Route::post('/register', [AuthController::class, 'store']);
