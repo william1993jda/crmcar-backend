@@ -20,11 +20,10 @@ use App\Models\Vehicle_regdate;
 use App\Models\Vehicle_type;
 use App\Models\Vehicle_version;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class VehiclesController extends Controller
 {
-//  com essa variavel, podemos acessar o nosso user em todas as funções
-//  para não ter que ficar colocando Auth::user() em todo lugar
     protected $user;
 
     public function __construct()
@@ -33,7 +32,6 @@ class VehiclesController extends Controller
             $this->user = Auth()->guard('api')->user();
     }
 
-//    pegando todos os dados através dessa função que retorna um array
     private function getData()
     {
         return [
@@ -54,17 +52,37 @@ class VehiclesController extends Controller
 
     public function index()
     {
-        //
+//        $vehicles = Vehicle::where('user_id', $this->user->id)
+        $vehicles = Vehicle::where('user_id', $this->user->id)
+            ->where('status', 1)
+            ->with(
+                'cover',
+                'vehicle_brand',
+                'vehicle_fuel',
+                'vehicle_color',
+                'vehicle_gearbox'
+            )
+            ->paginate(env('APP_PAGINATE'));
+
+        $vehicles->transform(function ($vehicle) {
+            $vehicle->vehicle_model = $vehicle->vehicle_model();
+            $vehicle->vehicle_version = $vehicle->vehicle_version();
+            return $vehicle;
+        });
+
+        return compact('vehicles');
     }
 
-    public function store(Request $request)
+    public function store()
     {
-        $vehicle = Vehicle::with('vehicle_photos')->firstOrCreate([
-            'user_id' => $this->user->id,
-            'status' => 0,
-        ]);
+        $vehicle = Vehicle::with('vehicle_photos')
+            ->firstOrCreate([
+                'user_id' => $this->user->id,
+                'status' => 0
+            ]);
 
-//        juntando os arrays do getData com o da função estore
+        $vehicle = $vehicle->fresh('vehicle_photos');
+
         return array_merge(['vehicle' => $vehicle], $this->getData());
     }
 
@@ -75,9 +93,30 @@ class VehiclesController extends Controller
 
     public function update(Request $request, $id)
     {
-        //
-    }
+        $request['vehicle_photos'] = $id;
+        $validator = Validator::make($request->all(), Vehicle::$rules);
 
+        if($validator->fails()) {
+            return response()->json(['error' => $validator->errors()] , 200);
+        }
+
+        $vehicle = Vehicle::where('user_id', $this->user->id)
+            ->find($id);
+        if($vehicle->id) {
+            $vehicle->fill($request->all());
+            $vehicle->status = 1;
+            $vehicle->uf_url = $this->validateUrl($request->uf);
+            $vehicle->city_url = $this->validateUrl($request->city);
+
+            if($vehicle->save()) {
+                return $this->success('Dados atualizados com sucesso');
+            }
+
+            return $this->error('Erro ao atualizar dados');
+        }
+
+        return $this->error('Veiculo não encontrado');
+    }
 
     public function destroy($id)
     {
@@ -86,7 +125,8 @@ class VehiclesController extends Controller
 
     public function brand($vehicle_type)
     {
-        $vehicle_brand = Vehicle_brand::where('vehicle_type_id', $vehicle_type)->get();
+        $vehicle_brand = Vehicle_brand::where('vehicle_type_id', $vehicle_type)
+            ->get();
 
         return compact('vehicle_brand');
     }

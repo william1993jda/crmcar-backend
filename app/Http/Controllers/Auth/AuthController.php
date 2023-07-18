@@ -7,7 +7,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-USE Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -19,27 +19,22 @@ class AuthController extends Controller
             'password' => 'required|string|min:6'
         ]);
 
-        if ($validator->fails()) {
+        if( $validator->fails() ){
             return response()->json(['errors' => $validator->errors()], 400);
         }
 
-//        User::create($request->all());
-
-        $user = new User();
-
-//        Pega a data atual
         $date = Carbon::now();
-
         $delete_account = Carbon::now();
 
+        $user = new User;
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = Hash::make($request->password);
-        $user->next_expiration = $date->addDay(7);
-        $user->delete_account = $delete_account->addDay(15);
+        $user->next_expiration = $date->addDays(7);
+        $user->delete_account = $delete_account->addDays(15);
         $user->save();
 
-        if ($user->id) {
+        if($user->id){
             return response()->json([
                 'access_token' => $user->createToken('auth-api')->accessToken
             ], 200);
